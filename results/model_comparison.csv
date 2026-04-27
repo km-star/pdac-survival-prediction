@@ -1,0 +1,6 @@
+model,accuracy,std_acc,auc,std_auc,notes
+LightGBM Ensemble (soft-vote),0.841,0.024,0.891,0.031,"Full pipeline: CNA+RNA+clinical, SMOTE, soft-vote LGB+XGB"
+LightGBM,0.803,0.028,0.857,0.034,"CNA reduction + RNA survival selection, class_weight=balanced"
+XGBoost + class balance,0.712,0.031,0.781,0.038,"SMOTE oversampling, scale_pos_weight=3"
+XGBoost (baseline),0.658,0.041,0.721,0.044,"Raw features, no class balancing"
+Nature Cancer benchmark,0.850,,,,"Reference: Miao et al. Nature Cancer (2024), multi-institutional cohort"
