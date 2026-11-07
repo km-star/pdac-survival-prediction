@@ -13,10 +13,10 @@ spread over seeds.
 A reproducibility audit of the Molecular Twin platform (Osipov et al., Nature
 Cancer 2024) using its released code (Zenodo 8423595) and released dataset
 (Supplementary Data 3, "MOESM3"), followed by a leakage-free comparison of six
-alternative pipelines under balanced accuracy. The earlier BIBM draft's framing
-(five implementation corrections, a +0.205 gain, a label-version explanation of
-the multi-omic gap, LightGBM AUC 0.857) is not supported and must not be reused.
-Section 6 lists what to drop and why.
+alternative pipelines under balanced accuracy. The framing of our earlier
+internal draft (five implementation corrections, a +0.205 gain, a label-version
+explanation of the multi-omic gap, LightGBM AUC 0.857) is not supported and
+must not be reused. Section 6 lists what to drop and why.
 
 ## 2. Facts established from the original sources
 
@@ -121,7 +121,7 @@ finds none; on RNA it finds 11 of 20 (0.626) against 3 for RF alone. A defensibl
 statement is that resampling after sparse selection raises specificity on some
 single-analyte problems, with no evidence of benefit at p = 6,355, n = 39.
 
-## 6. Claims from the BIBM draft that must go, with the reason
+## 6. Claims from the earlier internal draft that must go, with the reason
 
 | Claim | Status |
 |---|---|

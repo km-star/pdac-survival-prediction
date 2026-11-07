@@ -78,7 +78,27 @@ data/README.md            where to get MOESM3 (not redistributed)
 run_hpc.slurm             SLURM template; pdac_colab.ipynb  Colab wrapper
 ```
 
-## Data and code sources
+## Data, code sources and licensing
 
-- Osipov, A. et al. The Molecular Twin artificial-intelligence platform integrates multi-omic data to predict outcomes for pancreatic adenocarcinoma patients. *Nat. Cancer* 5, 299–314 (2024). Supplementary Data 3 = MOESM3.
-- Osipov, A. et al. Molecular Twin Pilot Source Code. Zenodo, 2023. https://zenodo.org/records/8423595
+- **Dataset.** Osipov, A. et al. The Molecular Twin artificial-intelligence
+  platform integrates multi-omic data to predict outcomes for pancreatic
+  adenocarcinoma patients. *Nat. Cancer* 5, 299–314 (2024),
+  https://doi.org/10.1038/s43018-023-00697-7. Supplementary Data 3 (MOESM3) is
+  released with the article under the Creative Commons Attribution 4.0 licence.
+  The spreadsheet itself is not redistributed here; `data/README.md` gives the
+  download location and checksum. The per-patient prediction files in
+  `results/` carry the study's own biobank identifiers (as published in the
+  supplementary file) and the published vital-status label, nothing else from
+  the dataset; feature names appear in `feature_stability.csv`. No other
+  patient-level data is included.
+- **Released code.** Osipov, A. et al. Molecular Twin Pilot Source Code.
+  Zenodo, 2023, https://zenodo.org/records/8423595, Apache License 2.0. No file
+  from that archive is copied here. The seven classifiers in `pdac_pipeline.py`
+  are an independent re-implementation of the model definitions in
+  `MTPilot_multiomic_model_training.py`, written against the released script
+  and verified by `tests/test_pipeline.py`; the table above documents the
+  correspondence.
+- **This repository.** All code, tests, predictions and tables here were
+  produced by the authors of this repository. Add a `LICENSE` file before
+  release (MIT or Apache 2.0 for the code; CC BY 4.0 for the results tables
+  are common choices).
