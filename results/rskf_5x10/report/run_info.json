@@ -1,0 +1,51 @@
+{
+  "version": "3.0.0",
+  "python": "3.14.3",
+  "platform": "macOS-26.6-arm64-arm-64bit-Mach-O",
+  "cpus": 10,
+  "n_jobs": 10,
+  "seeds": [
+    42
+  ],
+  "cfg": {
+    "rf_trees": 500,
+    "released_rf_trees": 100,
+    "boost_trees": 300,
+    "alphas": [
+      0.001,
+      0.005,
+      0.01,
+      0.05,
+      0.1,
+      0.5
+    ],
+    "k_grid": [
+      50,
+      100,
+      200,
+      500
+    ],
+    "nm_ratios": [
+      1.0,
+      1.5,
+      2.0
+    ],
+    "inner_cv": 3,
+    "stack_cv": 3,
+    "lgbm_min_child": 5,
+    "n_boot": 1000,
+    "n_flip": 5,
+    "cv": "rskf",
+    "cv_folds": 5,
+    "cv_repeats": 10
+  },
+  "packages": {
+    "numpy": "2.4.2",
+    "pandas": "2.3.3",
+    "scipy": "1.17.0",
+    "sklearn": "1.8.0",
+    "imblearn": "0.14.2",
+    "xgboost": "3.2.0",
+    "lightgbm": "4.6.0"
+  }
+}

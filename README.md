@@ -1,138 +1,84 @@
-# Reproducibility and Sparse Feature Selection for Multi-Omic PDAC Survival Prediction
+# Reproducibility audit of multi-omic PDAC survival prediction
 
-Code accompanying **"Reproducibility and Sparse Feature Selection for Small Imbalanced Multi-Omic Pancreatic Ductal Adenocarcinoma Survival Prediction"** — under review, IEEE BIBM 2026.
+Code, per-patient predictions and tables for a reproducibility audit of the
+Molecular Twin platform (Osipov et al., *Nature Cancer* 2024) and a
+leakage-free comparison of fold-internal preprocessing pipelines on its released
+dataset.
 
-Kumar Mahat, Rohit Soni, Uma Chinta, Xiuzhen Huang, Victor S. Sheng
-Texas Tech University · Cedars-Sinai Medical Center
+- **`FINDINGS.md`** — what the results show and what the paper can claim.
+- **`RESULTS.md`** — every table, generated from the saved predictions
+  (leave-one-out); **`RESULTS_rskf.md`** — the same for repeated 5-fold.
+- **`results/loo_5seeds/`** — the leave-one-out run behind those tables, seeds
+  42–46, plus the 20-shuffle permutation null on three analytes (`report/`
+  tables and figures, `preds/` per-patient predictions, `run.log`); `results/rskf_5x10/` is the repeated stratified 5-fold run (10
+  repeats); `results/loo_seed42/` is the original single-seed run.
+- **`pdac_pipeline.py`** — the whole pipeline in one file.
 
----
+## Reproduce
 
-## What this is
+```bash
+pip install -r requirements.txt
+pytest -q tests                                        # 18 tests, about a minute
+# put 43018_2023_697_MOESM3_ESM.xlsx in data/ (see data/README.md)
+python pdac_pipeline.py --data data/43018_2023_697_MOESM3_ESM.xlsx --outdir results/loo_seed42 --parts audit
+python pdac_pipeline.py --data data/43018_2023_697_MOESM3_ESM.xlsx --outdir results/loo_seed42 --parts all --n-jobs 10
+python scripts/make_results_md.py results/loo_seed42/report RESULTS.md
+```
 
-A reproducibility audit of the [Molecular Twin](https://www.nature.com/articles/s43018-024-00775-4) PDAC survival platform (Osipov et al., *Nature Cancer*, 2024), plus a set of leakage-free preprocessing pipelines evaluated against a same-dataset baseline.
+The full leave-one-out run with one seed took 93 minutes on a 10-core laptop.
+Re-running skips cached predictions, so an interrupted run resumes. `--parts
+report` rebuilds tables and figures from whatever exists. HPC: `run_hpc.slurm`
+(`RUN=loo|rskf|null`). Colab: `pdac_colab.ipynb`.
 
-Three findings:
+## What the pipeline does
 
-1. **The released code does not match the published methods.** Five concrete discrepancies. Correcting them raised mean balanced accuracy across 11 analyte modalities from **0.705 → 0.910**.
-2. **L1 sparse selection is what prevents majority-class collapse** at p ≫ n — not the resampling step. SMOTE without prior feature selection provides no benefit whatsoever (TN = 0, unchanged).
-3. **The published multi-omic result is not reproducible from the released dataset**, and the reason is a label-version difference, not an implementation failure. We introduce a metric to quantify this.
-
----
-
-## The five discrepancies
-
-Found by executing `MTPilot_training.py` from [Zenodo record 8423595](https://zenodo.org/records/8423595) and comparing against the paper's methods section:
-
-| # | Published method | Released implementation |
+| Part | Content | Output in `report/` |
 |---|---|---|
-| 1 | `SVC(kernel='rbf')` | linear `SGDClassifier` |
-| 2 | MLP layers (256, 128, 64, 32, 16) | (512, 256, 128, 64, 32) |
-| 3 | Fixed-threshold RFE | `RFECV(step=0.2)` |
-| 4 | Missing values imputed | Missing values dropped |
-| 5 | `class_weight` applied | No `class_weight` argument passed |
+| `audit` | Column check; deceased counts in MOESM3 vs the published confusion matrices | `table1_dataset`, `label_versions`, `column_audit` |
+| `baseline` | The seven released classifiers, seeded, as in Zenodo 8423595 | `table2_reproduction*`, `table3_*`, `table4_*` |
+| `pipelines` | P1–P6 fold-internal pipelines | `table3_*`, `table4_*`, `stats_*` |
+| `ablation` | RF / L1 / SMOTE / L1+SMOTE / RFECV on every analyte | `table5_ablation`, `fig_ablation_multiomic.png` |
+| `alpha_sweep` | P1 at fixed L1 penalties | `fig_alpha_and_labels.png` |
+| `oct2021`, `lvs_sim`, `nulltest` | Opt-in: label-flip sensitivity and permutation null | `table6_*`, `lvs_simulation`, `null_check` |
 
-Gains after correction were uniform across all 11 analytes (+0.087 to +0.332, mean +0.205, bootstrap CI [+0.163, +0.247]) — consistent with genuine fixes rather than selective tuning.
+Design rules: leave-one-patient-out outer loop (or `--cv rskf`); every fitted
+step, including hyper-parameter tuning and model selection, sees only the
+training fold; balanced accuracy = (sensitivity + specificity) / 2, with
+accuracy reported alongside; runs cached per (labels, analyte, method, seed).
 
----
+## The seven released classifiers
 
-## Three-step comparison protocol
+Taken line by line from `MTPilot_multiomic_model_training.py` (Zenodo 8423595),
+each after `StandardScaler`:
 
-The released MOESM3 dataset reflects a later follow-up cutoff than the published analysis (28 deceased / 11 alive vs. 23 / 16 in the multi-omic subset). Comparing directly against the paper's Table 1 would therefore be invalid. We separate the two effects:
-
-| Step | What it measures | Result |
-|---|---|---|
-| **1. Reproduction** | Corrected implementation, October 2021 labels | 11/11 exceed paper baseline · mean 0.910 |
-| **2. Fair baseline** | Paper's own models, MOESM3 labels | mean 0.702 — **the primary comparison baseline** |
-| **3. Novel pipelines** | Our pipelines, MOESM3 labels | 8/11 exceed Step 2 · mean 0.721 |
-
-Friedman χ² = 8.43, **p = 0.038** across 11 analytes. Bootstrap 95% CI [+0.002, +0.031].
-
-Step 2 is the honest baseline. Comparisons against Step 1 or against the paper's published table are reported for completeness but are not the claim.
-
----
-
-## Pipelines
-
-All components refit **inside every LOO fold** — scaling, selection, resampling. No exceptions.
-
-| | Pipeline |
+| Name | Released definition |
 |---|---|
-| **P1** | L1 sparse selection → SMOTE → Random Forest |
-| **P2** | RFECV → XGBoost |
-| **P3** | Stacking meta-learner over 7 base classifiers |
-| **P4** | Welch t-test filter → SMOTE → Random Forest |
-| **P5** | L1 selection → NearMiss-3 undersampling → Random Forest |
-| **P6** | LightGBM DART |
+| SVM | `SGDClassifier()` (hinge, L2, α = 1e-4) |
+| L1_SVM | `SGDClassifier(alpha=0.05, penalty="l1")` |
+| L1_RF | `SelectFromModel(SGDClassifier(alpha=0.05, penalty="l1"))` + `RandomForestClassifier()` (100 trees) |
+| PCA_LR | `PCA(20)` + `LogisticRegression(max_iter=1000)` |
+| DNN | `SelectFromModel(SGD L1)` + `MLPClassifier((512, 256, 128, 64, 32), max_iter=1000)` |
+| RFE_LR | `RFECV(LogisticRegression(max_iter=1000), step=0.2)` |
+| RFE_RF | `RFECV(RandomForestClassifier(), step=0.2)` |
 
-Best discrimination on the multi-omic analyte: **P6, AUC 0.857, sensitivity 0.929**.
+The released code fixes no random seeds and scores each leave-one-out fold
+with the `balanced_accuracy` scorer on one patient, which averages to plain
+accuracy. `tests/test_pipeline.py` pins these definitions.
 
----
-
-## Ablation: L1 selection is the critical component
-
-Multi-omic analyte, n = 39, p = 6,355. TN = alive patients correctly identified; TN = 0 means the classifier predicted every patient deceased.
-
-| Config | Bal. Acc | TN | |
-|---|---|---|---|
-| A0 · RF only | 0.718 | 0 | majority-class collapse |
-| A1 · L1 + RF | 0.744 | 3 | **collapse broken** |
-| A2 · SMOTE + RF | 0.718 | 0 | no gain — SMOTE alone does nothing |
-| A3 · L1 + SMOTE + RF | 0.744 | 3 | no gain over A1 |
-
-Ordering matters: **feature selection must precede resampling** when p ≫ n. In a 6,355-dimensional space with 38 training patients per fold, synthetic minority samples are indistinguishable from noise.
-
----
-
-## Label-version sensitivity
+## Layout
 
 ```
-LVS(f) = Δ Balanced Accuracy / Δ n_deceased
+pdac_pipeline.py          pipeline (data, methods, nested CV, statistics, tables, figures)
+scripts/make_results_md.py  report folder -> RESULTS.md
+tests/                    unit, leakage, planted-signal and model-definition tests (synthetic data)
+results/loo_5seeds/       leave-one-out, seeds 42-46: report/, preds/, run.log
+results/rskf_5x10/        repeated stratified 5-fold x 10, seed 42
+results/loo_seed42/       the original single-seed run
+data/README.md            where to get MOESM3 (not redistributed)
+run_hpc.slurm             SLURM template; pdac_colab.ipynb  Colab wrapper
 ```
 
-Five additional deaths recorded after the original cutoff shifted the majority-class prior from 59.0% → 71.8%:
+## Data and code sources
 
-| Model | Oct-2021 labels | MOESM3 labels | LVS |
-|---|---|---|---|
-| RFECV + RF | 0.974 | 0.718 | −0.051 / death |
-| P5 | 0.974 | 0.744 | −0.046 / death |
-
-On matched labels, P5 outperforms the original method by +0.026 and is less sensitive to follow-up updates.
-
-**Takeaway for the field:** survival ML studies should report the outcome-label cutoff date and class distribution alongside performance metrics. A faithful reimplementation will still produce different numbers if the labels have since been updated.
-
----
-
-## Data
-
-MOESM3, supplementary file from Osipov et al. (2024). 74 resected stage I/II PDAC patients, 10 analyte modalities, 6,363 features. Multi-omic subset: n = 39 (28 deceased, 11 alive), p = 6,355.
-
-Not redistributed here — obtain from the paper's supplementary materials.
-
----
-
-## Stack
-
-Python · scikit-learn · imbalanced-learn · XGBoost · LightGBM · pandas · NumPy
-Compute: TTU HPCC Matador partition, NVIDIA Tesla V100-PCIE-32GB
-
----
-
-## Limitations
-
-Single-institution cohort. LOOCV at n < 50 is high-variance, so per-analyte pipeline rankings are hypothesis-generating rather than conclusive. External validation on independent PDAC cohorts is required before any per-analyte finding guides method selection in practice.
-
----
-
-## Citation
-
-```bibtex
-@inproceedings{mahat2026pdac,
-  title     = {Reproducibility and Sparse Feature Selection for Small Imbalanced
-               Multi-Omic Pancreatic Ductal Adenocarcinoma Survival Prediction},
-  author    = {Mahat, Kumar and Soni, Rohit and Chinta, Uma and
-               Huang, Xiuzhen and Sheng, Victor S.},
-  booktitle = {IEEE International Conference on Bioinformatics and Biomedicine (BIBM)},
-  year      = {2026},
-  note      = {Under review}
-}
-```
+- Osipov, A. et al. The Molecular Twin artificial-intelligence platform integrates multi-omic data to predict outcomes for pancreatic adenocarcinoma patients. *Nat. Cancer* 5, 299–314 (2024). Supplementary Data 3 = MOESM3.
+- Osipov, A. et al. Molecular Twin Pilot Source Code. Zenodo, 2023. https://zenodo.org/records/8423595

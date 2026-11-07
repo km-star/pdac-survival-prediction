@@ -1,0 +1,12 @@
+Analyte,p,n,n_dead_moesm3,n_dead_published,n_published,cells_missing,cols_with_missing,n_dead_oct2021,flipped_in_subset,published_matches
+Clinical,331,74,50,50,74,0,0,45,5,moesm3
+SNV,610,72,48,48,72,0,0,43,5,moesm3
+INDEL,125,72,48,48,72,0,0,43,5,moesm3
+CNV,648,72,48,48,72,0,0,43,5,moesm3
+RNA,2000,57,37,37,57,0,0,35,2,moesm3
+RNA_Fusion,29,57,37,37,57,0,0,35,2,moesm3
+Pathology,819,71,47,47,71,0,0,43,4,moesm3
+Plasma_Protein,257,51,37,37,51,0,0,34,3,moesm3
+Plasma_Lipid,406,51,37,37,51,0,0,34,3,moesm3
+Tissue_Protein,1130,49,35,35,49,0,0,32,3,moesm3
+Multiomic,6355,39,28,28,39,0,0,27,1,moesm3

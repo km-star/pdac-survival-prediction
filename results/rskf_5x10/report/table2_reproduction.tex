@@ -1,0 +1,21 @@
+\begin{table}[t]
+\centering
+\caption{Re-execution of the seven released classifiers on MOESM3 against the published Table 1 confusion matrices. Published values are plain accuracy.}
+\begin{tabular}{lllrrrrrrrrrrr}
+\hline
+Analyte & best\_of7\_model & closest\_model & n & n\_dead & majority\_ACC & pub\_ACC & pub\_BA & best\_of7\_ACC\_optimistic & best\_of7\_BA\_at\_that\_model & closest\_cm\_L1\_distance & any\_exact\_match & Step2\_nested\_ACC & Step2\_nested\_BA \\
+\hline
+Clinical & PCA\_LR & PCA\_LR & 74 & 50 & 0.676 & 0.703 & 0.574 & 0.672 & 0.516 & 8 & False & 0.628 & 0.494 \\
+SNV & PCA\_LR & PCA\_LR & 72 & 48 & 0.667 & 0.639 & 0.490 & 0.642 & 0.496 & 2 & False & 0.608 & 0.501 \\
+INDEL & RFE\_RF & L1\_RF & 72 & 48 & 0.667 & 0.639 & 0.552 & 0.629 & 0.525 & 6 & False & 0.586 & 0.502 \\
+CNV & RFE\_LR & RFE\_LR & 72 & 48 & 0.667 & 0.653 & 0.531 & 0.619 & 0.470 & 10 & False & 0.557 & 0.451 \\
+RNA & DNN & L1\_RF & 57 & 37 & 0.649 & 0.684 & 0.596 & 0.635 & 0.598 & 6 & False & 0.593 & 0.553 \\
+RNA\_Fusion & L1\_SVM & L1\_SVM & 57 & 37 & 0.649 & 0.754 & 0.673 & 0.746 & 0.659 & 2 & False & 0.711 & 0.630 \\
+Pathology & RFE\_RF & PCA\_LR & 71 & 47 & 0.662 & 0.662 & 0.633 & 0.654 & 0.593 & 7 & False & 0.592 & 0.521 \\
+Plasma\_Protein & PCA\_LR & PCA\_LR & 51 & 37 & 0.725 & 0.745 & 0.647 & 0.741 & 0.622 & 3 & False & 0.716 & 0.598 \\
+Plasma\_Lipid & RFE\_LR & L1\_RF & 51 & 37 & 0.725 & 0.706 & 0.531 & 0.690 & 0.513 & 2 & False & 0.643 & 0.492 \\
+Tissue\_Protein & SVM & SVM & 49 & 35 & 0.714 & 0.735 & 0.600 & 0.712 & 0.576 & 2 & False & 0.653 & 0.539 \\
+Multiomic & PCA\_LR & PCA\_LR & 39 & 28 & 0.718 & 0.846 & 0.782 & 0.728 & 0.595 & 8 & False & 0.651 & 0.586 \\
+\hline
+\end{tabular}
+\end{table}
