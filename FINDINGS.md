@@ -13,10 +13,10 @@ spread over seeds.
 A reproducibility audit of the Molecular Twin platform (Osipov et al., Nature
 Cancer 2024) using its released code (Zenodo 8423595) and released dataset
 (Supplementary Data 3, "MOESM3"), followed by a leakage-free comparison of six
-alternative pipelines under balanced accuracy. The framing of our earlier
-internal draft (five implementation corrections, a +0.205 gain, a label-version
-explanation of the multi-omic gap, LightGBM AUC 0.857) is not supported and
-must not be reused. Section 6 lists what to drop and why.
+alternative pipelines under balanced accuracy. The framing of our earlier internal draft
+(five implementation corrections, a +0.205 gain, a label-version explanation of
+the multi-omic gap, LightGBM AUC 0.857) is not supported and must not be reused.
+Section 6 lists what to drop and why.
 
 ## 2. Facts established from the original sources
 
@@ -100,7 +100,7 @@ four times its mean. One analyte stands out consistently: Tissue Protein, where
 Step 3 scores 0.74–0.84 over the five seeds (mean 0.78) against 0.51–0.67 for
 Step 2, with P1 and P5 agreeing. Plasma Protein (0.53–0.66 over seeds) does not
 hold up. Tissue Protein should be reported as a candidate finding; the
-permutation test (`nulltest`, running) decides whether it exceeds chance.
+permutation test (Section 11) shows it beats 100 label shuffles (p = 0.010).
 
 Multi-omic discrimination (Table 4): P5 has the highest AUC, 0.72 [0.54, 0.89];
 the released RFECV + RF has AUC 0.71 but identifies zero alive patients
@@ -203,47 +203,77 @@ losses, mean −0.023 [−0.046, −0.001]).
 
 ## 11. Permutation null (Table 7 of RESULTS.md)
 
-For Tissue Protein, Plasma Protein and the multi-omic analyte, every method
-except stacking was re-run end to end on 20 label shuffles (class counts
-unchanged; 720 leave-one-out runs). `p_perm` = (1 + number of shuffles scoring
-at or above the observed value) / 21, so the smallest attainable p is 0.048,
-reached only when no shuffle matches the observed result.
+Every method except stacking (seven released models, five pipelines, and the
+two nested selections: 14 in all) was re-run end to end on shuffled labels
+with class counts unchanged: 20 shuffles on each of the 11 analytes, extended
+to 100 shuffles on Tissue Protein (4,200 leave-one-out runs). `p_perm` = (1 +
+number of shuffles scoring at or above the observed value) / (1 + shuffles),
+so the smallest attainable p is 0.048 at 20 shuffles and 0.010 at 100. The
+full table is Table 7 of RESULTS.md; the figure is
+`fig_permutation_null.png`.
 
-| Analyte | Method | Observed BA | Null mean (sd) | Null max | p_perm |
-|---|---|---|---|---|---|
-| Tissue Protein | Step 3 nested | 0.807 | 0.505 (0.107) | 0.629 | 0.048 |
-| Tissue Protein | P1 L1+SMOTE+RF | 0.779 | 0.515 (0.090) | 0.693 | 0.048 |
-| Tissue Protein | P5 L1+NearMiss+RF | 0.771 | 0.514 (0.115) | 0.671 | 0.048 |
-| Tissue Protein | Step 3 − Step 2 | +0.179 | 0.018 (0.082) | 0.164 | 0.048 |
-| Tissue Protein | Step 2 (released models) | 0.629 | 0.486 (0.088) | 0.643 | 0.095 |
-| Plasma Protein | P1 | 0.638 | 0.503 (0.087) | 0.633 | 0.048 |
-| Plasma Protein | Step 3 nested | 0.651 | 0.491 (0.087) | 0.713 | 0.095 |
-| Multi-omic | best of any method (SVM, DNN) | 0.648, 0.628 | 0.48–0.49 (0.08–0.11) | 0.66–0.70 | 0.095 |
-| Multi-omic | P5 | 0.630 | 0.500 (0.130) | 0.756 | 0.143 |
-| Multi-omic | P1 | 0.528 | 0.506 (0.119) | 0.802 | 0.381 |
+Tissue Protein, 100 shuffles:
+
+| Method | Observed BA | Null mean | Null max | p_perm |
+|---|---|---|---|---|
+| Step 3 nested | 0.807 | 0.493 | 0.714 | 0.010 |
+| P1 L1+SMOTE+RF | 0.779 | 0.486 | 0.693 | 0.010 |
+| P5 L1+NearMiss+RF | 0.771 | 0.493 | 0.736 | 0.010 |
+| Step 3 − Step 2 margin | +0.179 | 0.005 | 0.236 | 0.050 |
+| Step 2 (released models, nested) | 0.629 | 0.488 | 0.736 | 0.059 |
+| P2 RFECV+XGBoost | 0.643 | 0.470 | 0.693 | 0.059 |
+| every other method | 0.55–0.60 | 0.47–0.50 | 0.65–0.76 | 0.09–0.19 |
+
+The other ten analytes, 20 shuffles each (smallest p over the 14 methods, and
+the largest balanced accuracy any shuffled-label run reached):
+
+| Analyte | Best method | Observed BA | p_perm | Step 2 p | Step 3 p | Max shuffled BA |
+|---|---|---|---|---|---|---|
+| Plasma Protein | P1 | 0.638 | 0.048 | 0.571 | 0.095 | 0.776 |
+| RNA | P1 | 0.626 | 0.048 | 0.810 | 0.143 | 0.694 |
+| RNA Fusion | L1 SVM, L1 MLP, PCA LR | 0.63–0.67 | 0.048 | 0.095 | 0.429 | 0.869 |
+| SNV | SVM | 0.552 | 0.048 | 0.571 | 0.476 | 0.823 |
+| Pathology | Step 2 nested | 0.655 | 0.048 | 0.048 | 0.238 | 0.717 |
+| Multi-omic | L1 MLP, SVM | 0.63–0.65 | 0.095 | 0.190 | 0.190 | 0.802 |
+| Clinical | L1 RF | 0.542 | 0.143 | 0.619 | 0.476 | 0.631 |
+| INDEL | RFECV RF | 0.552 | 0.190 | 0.286 | 0.905 | 0.958 |
+| Plasma Lipid | P4 | 0.570 | 0.190 | 0.952 | 0.524 | 0.673 |
+| CNV | L1 SVM | 0.531 | 0.286 | 0.762 | 0.429 | 0.760 |
 
 Reading:
 
-- **Tissue Protein is the one result that beats every shuffle.** The two sparse
-  resampling pipelines and the nested Step 3 selection all exceed the best of
-  20 shuffled-label runs, and so does their margin over the released models.
-  The released models on the same analyte do not (p = 0.095–0.24). This is
-  consistent across leave-one-out, five seeds and repeated 5-fold (Sections
-  4, 9, 10). Report it as a candidate finding that survives a 20-shuffle
-  permutation test, with the caveats that 20 shuffles bound p at 0.048, that
-  14 methods × 3 analytes were examined, and that n = 49 with 14 alive patients.
-- **Plasma Protein is weak**: only P1 reaches p = 0.048; the nested selection
-  does not. Do not present it as a signal.
-- **The multi-omic analyte shows no method above chance.** The permutation
-  distributions are wide (sd 0.08–0.13) and shuffled labels produced balanced
-  accuracies up to 0.80 (P1) and 0.76 (P5, P6). This is the number to quote
-  when discussing why single leave-one-out values on 39 patients cannot
+- **Tissue Protein is the one result that survives.** At 100 shuffles the two
+  sparse resampling pipelines and the nested Step 3 selection still beat every
+  shuffle (p = 0.010), consistent with leave-one-out, five seeds and repeated
+  5-fold (Sections 4, 9, 10). Two qualifications from the extension: P2 no
+  longer beats the null (a shuffle reached 0.693 against its 0.643), and the
+  margin of Step 3 over the released models is borderline (one shuffle in 100
+  produced a larger gap, p = 0.050). The defensible statement is that the
+  sparse resampling pipelines beat chance on Tissue Protein and the released
+  models do not, not that the pipelines beat the released models. Report it as
+  a candidate finding: n = 49 with 14 alive patients, 14 methods on 11
+  analytes examined, and the analyte was chosen for the 100-shuffle extension
+  after the 20-shuffle screen.
+- **Nothing else stands out.** Seven analyte-method pairs reach the 20-shuffle
+  floor of 0.048 (Plasma Protein P1, RNA P1, three released models on RNA
+  Fusion, SVM on SNV, and the nested released-model selection on Pathology).
+  With 14 methods × 10 analytes = 140 tests, about seven hits at p ≤ 0.048 are
+  expected under the null, so these are consistent with chance and no analyte
+  has the agreement across methods that Tissue Protein shows. The nested
+  Step 3 selection does not beat 20 shuffles on any analyte other than Tissue
+  Protein.
+- **The multi-omic analyte shows no method above chance**, and the shuffled
+  runs show how far pure noise reaches on these cohorts: balanced accuracy
+  0.80 on multi-omic (n = 39), 0.82 on SNV, 0.87 on RNA Fusion, and 0.96 on
+  INDEL (P6 on one shuffle, n = 72). These are the numbers to quote when
+  explaining why single leave-one-out values on cohorts this size cannot
   support claims like the earlier draft's 0.974 or 0.857.
 
 ## 12. Status
 
 All planned runs are complete: leave-one-out with five seeds, repeated
-stratified 5-fold with ten repeats, and the permutation null on three
-analytes. Nothing further is running. Additional shuffles (to tighten the
-0.048 floor) or the null on the remaining eight analytes could be added with
-`--parts nulltest`; each shuffle of all analytes costs about 15 CPU-hours.
+stratified 5-fold with ten repeats, and the permutation null on all 11
+analytes (20 shuffles each, 100 on Tissue Protein). Nothing further is
+running. More shuffles can be added with `--parts nulltest --null-perms N`;
+existing shuffles are reused, and each new shuffle of all 11 analytes costs
+about 9 CPU-hours.
